@@ -3,6 +3,7 @@ package control;
 
 import model.BinarySearchTree;
 import model.Customer;
+import model.List;
 import view.DrawingPanel;
 import view.treeView.TreeNode;
 import view.treeView.TreePath;
@@ -87,13 +88,16 @@ public class MainController {
      * @param tree Der zu traversierende BinarySearchTree.
      * @return Das Ergebnis der Traversierung als Zeichenkette.
      */
-    private String traverse(BinarySearchTree tree){
+    private String traverse(BinarySearchTree<Customer> tree){
         //TODO 04:  Siehe Rückgabe. You can do it!
-        return "Lege fest, wie die Daten ausgegeben werden sollen!";
+        if(!tree.isEmpty()){
+            return traverse(tree.getLeftTree()) + traverse(tree.getRightTree()) + " Name: " + tree.getContent().getName();
+        }
+        return "";
     }
 
     /**
-     * Es wird nach dem letzten Kunden in der Datenmenge geuscht.
+     * Es wird nach dem letzten Kunden in der Datenmenge gesucht.
      * Falls dieser existiert, wird ein zwei Felder großes Array mit seinem Namen (Index 0) und seinem Umsatz (Index 1) zurückgegeben, sonst null.
      * @return
      */
@@ -101,7 +105,21 @@ public class MainController {
         //TODO 05: Umsetzung einer Teilaufgabe einer zurückliegenden Hausaufgabe.
         String[] output = new String[2];
 
+        if(!customerTree.isEmpty()) {
+            Customer last = searchLastNameRec(customerTree);
+
+            output[0] = last.getName();
+            output[1] = String.valueOf(last.getSales());
+        }
         return output;
+    }
+
+    private Customer searchLastNameRec(BinarySearchTree<Customer> tree){
+        if(tree.getRightTree().isEmpty()){
+            return tree.getContent();
+        }else{
+            return searchLastNameRec(tree.getRightTree());
+        }
     }
 
     /**
@@ -110,7 +128,14 @@ public class MainController {
      */
     public int sumUpSales(){
         //TODO 06:  Ein weiterer Algorithmus, der mit einer Traversierung einfach umsetzbar ist.
-        return -1;
+        return sumUpRec(customerTree);
+    }
+
+    private int sumUpRec(BinarySearchTree<Customer> tree){
+        if(!tree.isEmpty()){
+            return sumUpRec(tree.getLeftTree()) + sumUpRec(tree.getRightTree()) + tree.getContent().getSales();
+        }
+        return 0;
     }
 
     /**
@@ -121,6 +146,11 @@ public class MainController {
      */
     public boolean insert(String name, int sales){
         //TODO 07:  Erste Methode, die auf der Datenstruktur selbst konkret arbeitet und einige Methoden von ihr aufruft.
+        Customer customer = new Customer(name,sales);
+        if(customerTree.search(customer) == null){
+            customerTree.insert(customer);
+            return true;
+        }
         return false;
     }
 
@@ -132,6 +162,11 @@ public class MainController {
      */
     public boolean delete(String name){
         //TODO 08: Methode funktioniert so ähnlich wie die vorherige.
+        Customer customer = new Customer(name,0);
+        if(customerTree.search(customer) != null){
+            customerTree.remove(customerTree.search(customer));
+            return true;
+        }
         return false;
     }
 
@@ -143,8 +178,14 @@ public class MainController {
      */
     public String[] searchName(String name){
         //TODO 09: Setze eine Methode zum Suchen eines konkreten Objekts um.
-        String[] output = new String[1];
-        return output;
+        Customer customer = (customerTree.search(new Customer(name)));
+        if(customerTree.search(customer) != null){
+            String[] output = new String[2];
+            output[0] = customer.getName();
+            output[1] = String.valueOf(customer.getSales());
+            return output;
+        }
+        return null;
     }
 
     /**
@@ -155,10 +196,32 @@ public class MainController {
      */
     public String[] searchSales(int sales){
         //TODO 10: Diese Suche ist deutlich schwieriger umzusetzen als die vorherige. Welche Schwierigkeit ergibt sich hier?
-        String[] output = new String[1];
-        return output;
+        Customer customer = searchSalesRec(sales,customerTree);
+        if(customer != null){
+            String[] output = new String[2];
+            output[0] = customer.getName();
+            output[1] = String.valueOf(customer.getSales());
+            return output;
+        }
+        return null;
     }
 
+    private Customer searchSalesRec(int sales,BinarySearchTree<Customer> tree){
+        if(tree.isEmpty()){
+            return null;
+        }
+        if(tree.getContent().getSales() == sales){
+            return tree.getContent();
+        }
+        Customer cL = searchSalesRec(sales, tree.getLeftTree());
+        Customer cR = searchSalesRec(sales, tree.getRightTree());
+
+        if(cL != null){
+            return cL;
+        }else{
+            return cR;
+        }
+    }
 
     /**
      * Bestimmt eine Liste von Kunden-Objekten, deren Namen lexikographisch später erscheinen als der Name, der als Parameter übergeben wird.
@@ -173,6 +236,22 @@ public class MainController {
 
         String[][] output = new String[1][2];
         return output;
+    }
+
+    private List listUpperNameRec(BinarySearchTree<Customer> tree, Customer customer){
+        if(!tree.isEmpty()){
+            return new List<>();
+        }else{
+            if(tree.getContent().isGreater(customer)){
+                List<Customer> list = new List<>();
+                list.concat(listUpperNameRec(tree.getLeftTree(),customer));
+                list.append(tree.getContent());
+                list.concat(listUpperNameRec(tree.getRightTree(),customer));
+                return list;
+            }else{
+                return listUpperNameRec(tree.getRightTree(),customer);
+            }
+        }
     }
 
     /**
